@@ -1,4 +1,4 @@
-const API_KEY = "c2340585dd31d1167bb5b3f81e4fb5e2"; // Replace with your actual API key
+const API_KEY = "c2340585dd31d1167bb5b3f81e4fb5e2"; // Use provided API key
 const LAT = 47.356140; // Your latitude
 const LON = -68.328621; // Your longitude
 
@@ -80,10 +80,40 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
     } else {
         // Fallback to static image for other conditions
         video.style.display = "none"; // Hide video
-        const imageUrl = `images/${timePeriod}-${hours}-${minutes}-${weatherCondition}.jpg`;
-        background.style.backgroundImage = `url(${imageUrl})`;
+        const fallbackImageUrl = await findClosestImage(weatherCondition, timePeriod, hours, minutes);
+        background.style.backgroundImage = `url(${fallbackImageUrl})`;
         currentVideo = null;
-        mediaInfo.textContent = `Displaying Image: ${imageUrl}`;
+        mediaInfo.textContent = `Displaying Image: ${fallbackImageUrl}`;
+    }
+}
+
+/**
+ * Finds the closest existing image by searching backward in time
+ */
+async function findClosestImage(weatherCondition, timePeriod, hours, minutes) {
+    let fallbackHours = hours;
+    let fallbackMinutes = minutes;
+
+    while (true) {
+        const imageUrl = `images/${timePeriod}-${fallbackHours}-${fallbackMinutes}-${weatherCondition}.jpg`;
+
+        if (await fileExists(imageUrl)) {
+            return imageUrl;
+        }
+
+        // Decrement the time
+        if (fallbackMinutes === "30") {
+            fallbackMinutes = "00";
+        } else {
+            fallbackMinutes = "30";
+            fallbackHours = (fallbackHours - 1 + 24) % 24; // Wrap around for 24-hour format
+        }
+
+        // Break if we loop back to the original time
+        if (fallbackHours === hours && fallbackMinutes === minutes) {
+            console.warn("No fallback image found, using default.");
+            return "images/default.jpg"; // Default image if no fallback found
+        }
     }
 }
 
