@@ -16,7 +16,7 @@ async function getWeatherData() {
         weatherId: data.weather[0].id, // Weather condition ID
         weatherMain: data.weather[0].main.toLowerCase(), // Weather group (e.g., Rain, Snow)
         temperatureCelsius: data.main.temp, // Temperature in Celsius
-        temperatureFahrenheit: (data.main.temp * 9/5 + 32).toFixed(1), // Convert to Fahrenheit
+        temperatureFahrenheit: (data.main.temp * 9 / 5 + 32).toFixed(1), // Convert to Fahrenheit
     };
 }
 
@@ -39,11 +39,11 @@ function getClosestHalfHourTime() {
 }
 
 /**
- * Determines time period (morning, midday, evening, or night)
+ * Determines time period (morning, afternoon, evening, or night)
  */
 function getTimePeriod(hours) {
     if (hours >= 7 && hours < 12) return "morning"; // 7 AM to 12 PM
-    if (hours >= 12 && hours < 18) return "midday"; // 12 PM to 6 PM
+    if (hours >= 12 && hours < 18) return "afternoon"; // 12 PM to 6 PM
     if (hours >= 18 && hours < 22) return "evening"; // 6 PM to 10 PM
     return "night"; // 10 PM to 7 AM
 }
