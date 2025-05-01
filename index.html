@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lively Weather Wallpaper</title>
+    <title>Dynamic Weather Wallpaper</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Dynamic Weather Background</h1>
-        <p id="info">Fetching weather data...</p>
-        <div id="background" class="background"></div>
+    <div id="background">
+        <!-- Video container -->
+        <video id="weather-video" autoplay muted loop></video>
+
+        <!-- Audio container -->
+        <audio id="weather-audio" loop></audio>
     </div>
+    <div id="info"></div>
     <script src="script.js"></script>
 </body>
 </html>
