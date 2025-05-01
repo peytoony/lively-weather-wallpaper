@@ -2,6 +2,8 @@ const API_KEY = "c2340585dd31d1167bb5b3f81e4fb5e2"; // Replace with your actual 
 const LAT = 47.356140; // Your latitude
 const LON = -68.328621; // Your longitude
 
+let currentVideo = null; // Track the current video to avoid unnecessary changes
+
 /**
  * Fetches weather data from OpenWeather API using latitude and longitude
  */
@@ -18,6 +20,24 @@ async function getWeatherData() {
 }
 
 /**
+ * Calculates the closest half-hour time interval
+ */
+function getClosestHalfHourTime() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+
+    // Round minutes to the closest half-hour interval
+    const roundedMinutes = minutes < 15 ? "00" : minutes < 45 ? "30" : "00";
+    const roundedHours = roundedMinutes === "00" && minutes >= 45 ? hours + 1 : hours;
+
+    return {
+        hours: roundedHours % 24, // Ensure hours wrap around at 24
+        minutes: roundedMinutes,
+    };
+}
+
+/**
  * Determines time period (morning, midday, evening, or night)
  */
 function getTimePeriod(hours) {
@@ -28,41 +48,50 @@ function getTimePeriod(hours) {
 }
 
 /**
- * Updates the video and audio based on weather conditions
+ * Updates the video or photo based on weather conditions
  */
-function updateMedia(weatherCondition, timePeriod) {
+async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
     const video = document.getElementById("weather-video");
-    const audio = document.getElementById("weather-audio");
+    const background = document.getElementById("background");
 
-    // Map weather conditions to videos and audio
-    const mediaMap = {
-        rain: {
-            video: `videos/rain-${timePeriod}.mp4`,
-            audio: `audio/rain-loop.mp3`,
-        },
-        snow: {
-            video: `videos/snow-${timePeriod}.mp4`,
-            audio: `audio/snow-loop.mp3`,
-        },
-        thunderstorm: {
-            video: `videos/thunder-${timePeriod}.mp4`,
-            audio: `audio/thunder-loop.mp3`,
-        },
+    // Map weather conditions to videos
+    const videoMap = {
+        rain: `videos/rain-${timePeriod}.mp4`,
+        snow: `videos/snow-${timePeriod}.mp4`,
+        thunderstorm: `videos/thunder-${timePeriod}.mp4`,
     };
 
-    if (mediaMap[weatherCondition]) {
-        // Set video and audio sources
-        video.src = mediaMap[weatherCondition].video;
-        audio.src = mediaMap[weatherCondition].audio;
-        
-        // Ensure video and audio play
-        video.style.display = "block";
-        audio.style.display = "block";
-        audio.play();
+    if (videoMap[weatherCondition]) {
+        const videoUrl = videoMap[weatherCondition];
+
+        // Check if the video file exists before updating
+        const videoExists = await fileExists(videoUrl);
+
+        if (videoExists && currentVideo !== videoUrl) {
+            // Update video source if it exists and is different from the current video
+            video.src = videoUrl;
+            video.style.display = "block"; // Show the video
+            background.style.backgroundImage = ""; // Clear static image
+            currentVideo = videoUrl;
+        }
     } else {
-        // Hide video and audio for other weather types
-        video.style.display = "none";
-        audio.style.display = "none";
+        // Fallback to static image for other conditions
+        video.style.display = "none"; // Hide video
+        background.style.backgroundImage = `url(images/${timePeriod}-${hours}-${minutes}-${weatherCondition}.jpg)`;
+        currentVideo = null;
+    }
+}
+
+/**
+ * Checks if a file exists by making a HEAD request
+ */
+async function fileExists(url) {
+    try {
+        const response = await fetch(url, { method: "HEAD" });
+        return response.ok;
+    } catch (error) {
+        console.error("Error checking file existence:", error);
+        return false;
     }
 }
 
@@ -72,32 +101,36 @@ function updateMedia(weatherCondition, timePeriod) {
 async function updateWallpaper() {
     const now = new Date();
     const currentHour = now.getHours();
+    const { hours, minutes } = getClosestHalfHourTime();
 
     // Determine whether it's daytime or nighttime
     if (currentHour >= 22 || currentHour < 7) {
         // Night: Set static night image
         document.getElementById("info").textContent = `Nighttime: Static Image`;
         document.getElementById("background").style.backgroundImage = `url(images/night.jpg)`;
-        updateMedia(null, null);
+        document.getElementById("weather-video").style.display = "none"; // Hide video
+        currentVideo = null; // Reset current video
     } else {
         // Daytime: Fetch weather and update based on time + weather
         const { weatherId, temperature } = await getWeatherData();
         const timePeriod = getTimePeriod(currentHour);
         const weatherCondition = mapWeatherCondition(weatherId);
 
-        document.getElementById("info").textContent = `Weather: ${weatherId}, Temp: ${temperature}°C`;
-        updateMedia(weatherCondition, timePeriod);
+        document.getElementById("info").textContent = `Weather: ${weatherId}, Temp: ${temperature}°C, Time: ${hours}:${minutes}`;
+        updateMedia(weatherCondition, timePeriod, hours, minutes);
     }
 }
 
 /**
- * Maps weather condition ID to a condition for videos and audio
+ * Maps weather condition ID to a condition for media
  */
 function mapWeatherCondition(weatherId) {
     if (weatherId >= 200 && weatherId < 300) return "thunderstorm"; // Thunderstorm
     if (weatherId >= 500 && weatherId < 600) return "rain"; // Rain
     if (weatherId >= 600 && weatherId < 700) return "snow"; // Snow
-    return null; // Other conditions
+    if (weatherId === 800) return "clear"; // Clear sky
+    if (weatherId >= 801 && weatherId <= 804) return "clouds"; // Clouds
+    return "default"; // Other conditions
 }
 
 // Update wallpaper every 30 minutes

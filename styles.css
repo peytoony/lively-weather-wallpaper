@@ -26,6 +26,7 @@ body {
     height: 100%;
     object-fit: cover;
     z-index: 0;
+    display: none; /* Hidden unless a video is playing */
 }
 
 /* Info Display */
