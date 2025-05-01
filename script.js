@@ -15,7 +15,8 @@ async function getWeatherData() {
     return {
         weatherId: data.weather[0].id, // Weather condition ID
         weatherMain: data.weather[0].main.toLowerCase(), // Weather group (e.g., Rain, Snow)
-        temperature: data.main.temp, // Temperature in Celsius
+        temperatureCelsius: data.main.temp, // Temperature in Celsius
+        temperatureFahrenheit: (data.main.temp * 9/5 + 32).toFixed(1), // Convert to Fahrenheit
     };
 }
 
@@ -53,6 +54,7 @@ function getTimePeriod(hours) {
 async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
     const video = document.getElementById("weather-video");
     const background = document.getElementById("background");
+    const mediaInfo = document.getElementById("media-info");
 
     // Map weather conditions to videos
     const videoMap = {
@@ -73,12 +75,15 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
             video.style.display = "block"; // Show the video
             background.style.backgroundImage = ""; // Clear static image
             currentVideo = videoUrl;
+            mediaInfo.textContent = `Displaying Video: ${videoUrl}`;
         }
     } else {
         // Fallback to static image for other conditions
         video.style.display = "none"; // Hide video
-        background.style.backgroundImage = `url(images/${timePeriod}-${hours}-${minutes}-${weatherCondition}.jpg)`;
+        const imageUrl = `images/${timePeriod}-${hours}-${minutes}-${weatherCondition}.jpg`;
+        background.style.backgroundImage = `url(${imageUrl})`;
         currentVideo = null;
+        mediaInfo.textContent = `Displaying Image: ${imageUrl}`;
     }
 }
 
@@ -96,12 +101,24 @@ async function fileExists(url) {
 }
 
 /**
+ * Updates the time display
+ */
+function updateTimeDisplay() {
+    const now = new Date();
+    const timeDisplay = document.getElementById("time");
+    timeDisplay.textContent = `Time: ${now.toLocaleTimeString()}`;
+}
+
+/**
  * Main function to update the wallpaper
  */
 async function updateWallpaper() {
     const now = new Date();
     const currentHour = now.getHours();
     const { hours, minutes } = getClosestHalfHourTime();
+
+    // Update time display
+    updateTimeDisplay();
 
     // Determine whether it's daytime or nighttime
     if (currentHour >= 22 || currentHour < 7) {
@@ -112,11 +129,12 @@ async function updateWallpaper() {
         currentVideo = null; // Reset current video
     } else {
         // Daytime: Fetch weather and update based on time + weather
-        const { weatherId, temperature } = await getWeatherData();
+        const { weatherId, temperatureFahrenheit, weatherMain } = await getWeatherData();
         const timePeriod = getTimePeriod(currentHour);
         const weatherCondition = mapWeatherCondition(weatherId);
 
-        document.getElementById("info").textContent = `Weather: ${weatherId}, Temp: ${temperature}°C, Time: ${hours}:${minutes}`;
+        document.getElementById("weather").textContent = `Weather: ${weatherMain}`;
+        document.getElementById("temperature").textContent = `Temperature: ${temperatureFahrenheit}°F`;
         updateMedia(weatherCondition, timePeriod, hours, minutes);
     }
 }

@@ -32,13 +32,18 @@ body {
 /* Info Display */
 #info {
     position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 10px;
+    left: 10px;
     z-index: 2;
     background: rgba(0, 0, 0, 0.5);
     padding: 10px 20px;
     border-radius: 10px;
-    font-size: 1.2em;
+    font-size: 1em;
     color: white;
+    text-align: left;
+    max-width: 300px;
+}
+
+#info div {
+    margin-bottom: 5px;
 }
