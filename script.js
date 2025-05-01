@@ -1,20 +1,29 @@
-const API_KEY = "YOUR_API_KEY"; // Replace with your actual API key
-const LAT = 47.356140; // Your latitude
-const LON = -68.328621; // Your longitude
-
 /**
- * Fetches weather data from OpenWeather API using latitude and longitude
+ * Returns default weather data for testing
  */
 async function getWeatherData() {
-    const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${API_KEY}&units=metric`
-    );
-    const data = await response.json();
+    // Return default weather condition and temperature
     return {
-        weatherId: data.weather[0].id, // Weather condition ID
-        weatherMain: data.weather[0].main.toLowerCase(), // Weather group (e.g., Rain, Snow)
-        temperature: data.main.temp, // Temperature in Celsius
+        weatherId: 500, // Default to light rain (Rain group)
+        weatherMain: "rain", // Default weather group
+        temperature: 15, // Default temperature in Celsius
     };
+}
+
+/**
+ * Returns default closest half-hour time for testing
+ */
+function getClosestHalfHourTime() {
+    // Return a fixed testing time (e.g., 1:30 PM)
+    return { hours: 13, minutes: "30" };
+}
+
+/**
+ * Returns a fixed time period for testing
+ */
+function getTimePeriod(hours) {
+    // Return a fixed time period (e.g., "afternoon")
+    return "afternoon";
 }
 
 /**
@@ -35,34 +44,6 @@ function mapWeatherToImage(weatherId) {
         if (weatherId === 804) return "overcast-clouds.jpg";
     }
     return "default.jpg"; // Fallback image
-}
-
-/**
- * Calculates the closest half-hour time interval
- */
-function getClosestHalfHourTime() {
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-
-    // Round minutes to the closest half-hour interval
-    const roundedMinutes = minutes < 15 ? "00" : minutes < 45 ? "30" : "00";
-    const roundedHours = roundedMinutes === "00" && minutes >= 45 ? hours + 1 : hours;
-
-    return {
-        hours: roundedHours % 24, // Ensure hours wrap around at 24
-        minutes: roundedMinutes,
-    };
-}
-
-/**
- * Determines time period (morning, afternoon, evening, or night)
- */
-function getTimePeriod(hours) {
-    if (hours >= 7 && hours < 12) return "morning"; // 7 AM to 12 PM
-    if (hours >= 12 && hours < 18) return "afternoon"; // 12 PM to 6 PM
-    if (hours >= 18 && hours < 22) return "evening"; // 6 PM to 10 PM
-    return "night"; // 10 PM to 7 AM
 }
 
 /**
