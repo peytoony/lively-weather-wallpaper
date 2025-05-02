@@ -8,6 +8,19 @@ let currentVideo = null; // Track the current video to avoid unnecessary changes
  * Fetches weather data from OpenWeather API using latitude and longitude
  */
 async function getWeatherData() {
+    const overrideWeather = document.getElementById("override-weather").value.trim().toLowerCase();
+    const overrideTemperature = document.getElementById("override-temperature").value.trim();
+    const overrideEnabled = document.getElementById("override-weather-checkbox").checked;
+
+    if (overrideEnabled && overrideWeather) {
+        return {
+            weatherId: overrideWeather === "rain" ? 500 : overrideWeather === "snow" ? 600 : overrideWeather === "thunderstorm" ? 200 : 800,
+            weatherMain: overrideWeather,
+            temperatureCelsius: parseFloat(overrideTemperature) || 20, // Default to 20°C if not provided
+            temperatureFahrenheit: ((parseFloat(overrideTemperature) || 20) * 9 / 5 + 32).toFixed(1), // Convert to Fahrenheit
+        };
+    }
+
     const response = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${API_KEY}&units=metric`
     );
@@ -24,7 +37,10 @@ async function getWeatherData() {
  * Calculates the closest half-hour time interval
  */
 function getClosestHalfHourTime() {
-    const now = new Date();
+    const overrideTime = document.getElementById("override-time").value.trim();
+    const overrideEnabled = document.getElementById("override-time-checkbox").checked;
+
+    const now = overrideEnabled && overrideTime ? new Date(`1970-01-01T${overrideTime}:00`) : new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
 
@@ -76,6 +92,10 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
             background.style.backgroundImage = ""; // Clear static image
             currentVideo = videoUrl;
             mediaInfo.textContent = `Displaying Video: ${videoUrl}`;
+
+            // Display the video URL in the GUI
+            const imageInfo = document.getElementById("image-info");
+            imageInfo.textContent = `Video URL: ${videoUrl}`;
         }
     } else {
         // Fallback to static image for other conditions
@@ -84,6 +104,10 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
         background.style.backgroundImage = `url(${fallbackImageUrl})`;
         currentVideo = null;
         mediaInfo.textContent = `Displaying Image: ${fallbackImageUrl}`;
+
+        // Display the image URL in the GUI
+        const imageInfo = document.getElementById("image-info");
+        imageInfo.textContent = `Image URL: ${fallbackImageUrl}`;
     }
 }
 
@@ -143,30 +167,19 @@ function updateTimeDisplay() {
  * Main function to update the wallpaper
  */
 async function updateWallpaper() {
-    const now = new Date();
-    const currentHour = now.getHours();
     const { hours, minutes } = getClosestHalfHourTime();
 
     // Update time display
     updateTimeDisplay();
 
-    // Determine whether it's daytime or nighttime
-    if (currentHour >= 22 || currentHour < 7) {
-        // Night: Set static night image
-        document.getElementById("info").textContent = `Nighttime: Static Image`;
-        document.getElementById("background").style.backgroundImage = `url(images/night.jpg)`;
-        document.getElementById("weather-video").style.display = "none"; // Hide video
-        currentVideo = null; // Reset current video
-    } else {
-        // Daytime: Fetch weather and update based on time + weather
-        const { weatherId, temperatureFahrenheit, weatherMain } = await getWeatherData();
-        const timePeriod = getTimePeriod(currentHour);
-        const weatherCondition = mapWeatherCondition(weatherId);
+    const { weatherId, temperatureFahrenheit, weatherMain } = await getWeatherData();
+    const timePeriod = getTimePeriod(hours);
+    const weatherCondition = mapWeatherCondition(weatherId);
 
-        document.getElementById("weather").textContent = `Weather: ${weatherMain}`;
-        document.getElementById("temperature").textContent = `Temperature: ${temperatureFahrenheit}°F`;
-        updateMedia(weatherCondition, timePeriod, hours, minutes);
-    }
+    document.getElementById("weather").textContent = `Weather: ${weatherMain}`;
+    document.getElementById("temperature").textContent = `Temperature: ${temperatureFahrenheit}°F`;
+
+    updateMedia(weatherCondition, timePeriod, hours, minutes);
 }
 
 /**
@@ -181,6 +194,7 @@ function mapWeatherCondition(weatherId) {
     return "default"; // Other conditions
 }
 
-// Update wallpaper every 30 minutes
+// Update wallpaper every 5 minutes
 updateWallpaper();
-setInterval(updateWallpaper, 30 * 60 * 1000);
+setInterval(updateWallpaper, 5 * 60 * 1000); // Update weather every 5 minutes
+setInterval(updateTimeDisplay, 1000); // Update time every second
