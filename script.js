@@ -117,9 +117,11 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
 async function findClosestVideo(weatherCondition, timePeriod, hours, minutes) {
     let fallbackHours = hours;
     let fallbackMinutes = minutes;
+    let fallbackTimePeriod = timePeriod;
 
     while (true) {
-        const videoUrl = `videos/${timePeriod}-${fallbackHours}-${fallbackMinutes}-${weatherCondition}.mp4`;
+        // Updated naming scheme: <weather-condition>-<hour>-<minute>-<time-period>.mp4
+        const videoUrl = `videos/${weatherCondition}-${fallbackHours}-${fallbackMinutes}-${fallbackTimePeriod}.mp4`;
 
         // Log the attempted video URL
         console.log(`Attempting video URL: ${videoUrl}`);
@@ -135,10 +137,15 @@ async function findClosestVideo(weatherCondition, timePeriod, hours, minutes) {
         } else {
             fallbackMinutes = "30";
             fallbackHours = (fallbackHours - 1 + 24) % 24; // Wrap around for 24-hour format
+
+            // Update the time period if the hour changes
+            if (fallbackHours === 23 && fallbackMinutes === "30") {
+                fallbackTimePeriod = getTimePeriod(fallbackHours);
+            }
         }
 
         // Break if we loop back to the original time
-        if (fallbackHours === hours && fallbackMinutes === minutes) {
+        if (fallbackHours === hours && fallbackMinutes === minutes && fallbackTimePeriod === timePeriod) {
             console.warn("No fallback video found, using default.");
             const defaultVideo = `videos/default.mp4`;
             document.getElementById("media-info").textContent = `Attempting Video: ${defaultVideo}`;
