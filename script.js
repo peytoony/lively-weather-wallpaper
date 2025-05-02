@@ -8,19 +8,6 @@ let currentVideo = null; // Track the current video to avoid unnecessary changes
  * Fetches weather data from OpenWeather API using latitude and longitude
  */
 async function getWeatherData() {
-    const overrideWeather = document.getElementById("override-weather").value.trim().toLowerCase();
-    const overrideTemperature = document.getElementById("override-temperature").value.trim();
-    const overrideEnabled = document.getElementById("override-weather-checkbox").checked;
-
-    if (overrideEnabled && overrideWeather) {
-        return {
-            weatherId: overrideWeather === "rain" ? 500 : overrideWeather === "snow" ? 600 : overrideWeather === "thunderstorm" ? 200 : 800,
-            weatherMain: overrideWeather,
-            temperatureCelsius: parseFloat(overrideTemperature) || 20, // Default to 20°C if not provided
-            temperatureFahrenheit: ((parseFloat(overrideTemperature) || 20) * 9 / 5 + 32).toFixed(1), // Convert to Fahrenheit
-        };
-    }
-
     const response = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${API_KEY}&units=metric`
     );
@@ -37,10 +24,7 @@ async function getWeatherData() {
  * Calculates the closest half-hour time interval
  */
 function getClosestHalfHourTime() {
-    const overrideTime = document.getElementById("override-time").value.trim();
-    const overrideEnabled = document.getElementById("override-time-checkbox").checked;
-
-    const now = overrideEnabled && overrideTime ? new Date(`1970-01-01T${overrideTime}:00`) : new Date();
+    const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
 
@@ -108,106 +92,6 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
         } else {
             mediaInfo.textContent = `Image Not Found: ${fallbackImageUrl}`;
         }
-    }
-}
-
-/**
- * Finds the closest existing video by searching backward in time
- */
-async function findClosestVideo(weatherCondition, timePeriod, hours, minutes) {
-    let fallbackHours = hours;
-    let fallbackMinutes = minutes;
-    let fallbackTimePeriod = timePeriod;
-
-    while (true) {
-        // Updated naming scheme: <weather-condition>-<hour>-<minute>-<time-period>.mp4
-        const videoUrl = `videos/${weatherCondition}-${fallbackHours}-${fallbackMinutes}-${fallbackTimePeriod}.mp4`;
-
-        // Log the attempted video URL
-        console.log(`Attempting video URL: ${videoUrl}`);
-        document.getElementById("media-info").textContent = `Attempting Video: ${videoUrl}`;
-
-        if (await fileExists(videoUrl)) {
-            return videoUrl;
-        }
-
-        // Decrement the time
-        if (fallbackMinutes === "30") {
-            fallbackMinutes = "00";
-        } else {
-            fallbackMinutes = "30";
-            fallbackHours = (fallbackHours - 1 + 24) % 24; // Wrap around for 24-hour format
-
-            // Update the time period if the hour changes
-            if (fallbackHours === 23 && fallbackMinutes === "30") {
-                fallbackTimePeriod = getTimePeriod(fallbackHours);
-            }
-        }
-
-        // Break if we loop back to the original time
-        if (fallbackHours === hours && fallbackMinutes === minutes && fallbackTimePeriod === timePeriod) {
-            console.warn("No fallback video found, using default.");
-            const defaultVideo = `videos/default.mp4`;
-            document.getElementById("media-info").textContent = `Attempting Video: ${defaultVideo}`;
-            return defaultVideo; // Default video if no fallback found
-        }
-    }
-}
-
-/**
- * Finds the closest existing image by searching backward in time
- */
-async function findClosestImage(weatherCondition, timePeriod, hours, minutes) {
-    const overrideImagePath = document.getElementById("override-image-path").value.trim();
-    const overrideEnabled = document.getElementById("override-image-checkbox").checked;
-
-    if (overrideEnabled && overrideImagePath) {
-        console.log(`Using overridden image path: ${overrideImagePath}`);
-        return overrideImagePath;
-    }
-
-    let fallbackHours = hours;
-    let fallbackMinutes = minutes;
-
-    while (true) {
-        const imageUrl = `images/${timePeriod}-${fallbackHours}-${fallbackMinutes}-${weatherCondition}.jpg`;
-
-        // Log the attempted image URL
-        console.log(`Attempting image URL: ${imageUrl}`);
-        document.getElementById("image-info").textContent = `Attempting Image: ${imageUrl}`;
-
-        if (await fileExists(imageUrl)) {
-            return imageUrl;
-        }
-
-        // Decrement the time
-        if (fallbackMinutes === "30") {
-            fallbackMinutes = "00";
-        } else {
-            fallbackMinutes = "30";
-            fallbackHours = (fallbackHours - 1 + 24) % 24; // Wrap around for 24-hour format
-        }
-
-        // Break if we loop back to the original time
-        if (fallbackHours === hours && fallbackMinutes === minutes) {
-            console.warn("No fallback image found, using default.");
-            const defaultImage = "images/default.jpg";
-            document.getElementById("image-info").textContent = `Attempting Image: ${defaultImage}`;
-            return defaultImage; // Default image if no fallback found
-        }
-    }
-}
-
-/**
- * Checks if a file exists by making a HEAD request
- */
-async function fileExists(url) {
-    try {
-        const response = await fetch(url, { method: "HEAD" });
-        return response.ok;
-    } catch (error) {
-        console.error("Error checking file existence:", error);
-        return false;
     }
 }
 
