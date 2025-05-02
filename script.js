@@ -108,7 +108,7 @@ function updateTimeDisplay() {
  * Main function to update the wallpaper
  */
 async function updateWallpaper() {
-    console.log("updateWallpaper called");
+    console.log("updateWallpaper called"); // Debugging log
     const { hours, minutes } = getClosestHalfHourTime();
 
     // Update time display
