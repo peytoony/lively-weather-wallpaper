@@ -47,3 +47,8 @@ body {
 #info div {
     margin-bottom: 5px;
 }
+
+#image-info, #media-info {
+    font-size: 0.9em;
+    color: #ccc;
+}

@@ -71,6 +71,7 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
     const video = document.getElementById("weather-video");
     const background = document.getElementById("background");
     const mediaInfo = document.getElementById("media-info");
+    const imageInfo = document.getElementById("image-info");
 
     // Map weather conditions to videos
     const videoMap = {
@@ -82,32 +83,37 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
     if (videoMap[weatherCondition]) {
         const videoUrl = videoMap[weatherCondition];
 
-        // Check if the video file exists before updating
+        // Display the video URL even if it doesn't exist
+        mediaInfo.textContent = `Attempting Video: ${videoUrl}`;
+        imageInfo.textContent = `Video URL: ${videoUrl}`;
+
         const videoExists = await fileExists(videoUrl);
 
-        if (videoExists && currentVideo !== videoUrl) {
-            // Update video source if it exists and is different from the current video
+        if (videoExists) {
             video.src = videoUrl;
             video.style.display = "block"; // Show the video
             background.style.backgroundImage = ""; // Clear static image
             currentVideo = videoUrl;
-            mediaInfo.textContent = `Displaying Video: ${videoUrl}`;
-
-            // Display the video URL in the GUI
-            const imageInfo = document.getElementById("image-info");
-            imageInfo.textContent = `Video URL: ${videoUrl}`;
+            mediaInfo.textContent = `Displaying Video: ${videoUrl} (File Found)`;
+        } else {
+            mediaInfo.textContent = `Video Not Found: ${videoUrl}`;
         }
     } else {
         // Fallback to static image for other conditions
         video.style.display = "none"; // Hide video
         const fallbackImageUrl = await findClosestImage(weatherCondition, timePeriod, hours, minutes);
-        background.style.backgroundImage = `url(${fallbackImageUrl})`;
-        currentVideo = null;
-        mediaInfo.textContent = `Displaying Image: ${fallbackImageUrl}`;
 
-        // Display the image URL in the GUI
-        const imageInfo = document.getElementById("image-info");
-        imageInfo.textContent = `Image URL: ${fallbackImageUrl}`;
+        // Display the attempted image URL
+        imageInfo.textContent = `Attempting Image: ${fallbackImageUrl}`;
+        background.style.backgroundImage = `url(${fallbackImageUrl})`;
+
+        const imageExists = await fileExists(fallbackImageUrl);
+
+        if (imageExists) {
+            mediaInfo.textContent = `Displaying Image: ${fallbackImageUrl} (File Found)`;
+        } else {
+            mediaInfo.textContent = `Image Not Found: ${fallbackImageUrl}`;
+        }
     }
 }
 
@@ -115,11 +121,23 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
  * Finds the closest existing image by searching backward in time
  */
 async function findClosestImage(weatherCondition, timePeriod, hours, minutes) {
+    const overrideImagePath = document.getElementById("override-image-path").value.trim();
+    const overrideEnabled = document.getElementById("override-image-checkbox").checked;
+
+    if (overrideEnabled && overrideImagePath) {
+        console.log(`Using overridden image path: ${overrideImagePath}`);
+        return overrideImagePath;
+    }
+
     let fallbackHours = hours;
     let fallbackMinutes = minutes;
 
     while (true) {
         const imageUrl = `images/${timePeriod}-${fallbackHours}-${fallbackMinutes}-${weatherCondition}.jpg`;
+
+        // Log the attempted image URL
+        console.log(`Attempting image URL: ${imageUrl}`);
+        document.getElementById("image-info").textContent = `Attempting Image: ${imageUrl}`;
 
         if (await fileExists(imageUrl)) {
             return imageUrl;
@@ -136,7 +154,9 @@ async function findClosestImage(weatherCondition, timePeriod, hours, minutes) {
         // Break if we loop back to the original time
         if (fallbackHours === hours && fallbackMinutes === minutes) {
             console.warn("No fallback image found, using default.");
-            return "images/default.jpg"; // Default image if no fallback found
+            const defaultImage = "images/default.jpg";
+            document.getElementById("image-info").textContent = `Attempting Image: ${defaultImage}`;
+            return defaultImage; // Default image if no fallback found
         }
     }
 }
