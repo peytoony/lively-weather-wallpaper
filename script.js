@@ -73,30 +73,24 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
     const mediaInfo = document.getElementById("media-info");
     const imageInfo = document.getElementById("image-info");
 
-    // Map weather conditions to videos
-    const videoMap = {
-        rain: `videos/rain-${timePeriod}.mp4`,
-        snow: `videos/snow-${timePeriod}.mp4`,
-        thunderstorm: `videos/thunder-${timePeriod}.mp4`,
-    };
+    if (weatherCondition === "rain" || weatherCondition === "thunderstorm") {
+        // Use fallback logic for videos
+        const fallbackVideoUrl = await findClosestVideo(weatherCondition, timePeriod, hours, minutes);
 
-    if (videoMap[weatherCondition]) {
-        const videoUrl = videoMap[weatherCondition];
+        // Display the attempted video URL
+        mediaInfo.textContent = `Attempting Video: ${fallbackVideoUrl}`;
+        imageInfo.textContent = `Video URL: ${fallbackVideoUrl}`;
 
-        // Display the video URL even if it doesn't exist
-        mediaInfo.textContent = `Attempting Video: ${videoUrl}`;
-        imageInfo.textContent = `Video URL: ${videoUrl}`;
-
-        const videoExists = await fileExists(videoUrl);
+        const videoExists = await fileExists(fallbackVideoUrl);
 
         if (videoExists) {
-            video.src = videoUrl;
+            video.src = fallbackVideoUrl;
             video.style.display = "block"; // Show the video
             background.style.backgroundImage = ""; // Clear static image
-            currentVideo = videoUrl;
-            mediaInfo.textContent = `Displaying Video: ${videoUrl} (File Found)`;
+            currentVideo = fallbackVideoUrl;
+            mediaInfo.textContent = `Displaying Video: ${fallbackVideoUrl} (File Found)`;
         } else {
-            mediaInfo.textContent = `Video Not Found: ${videoUrl}`;
+            mediaInfo.textContent = `Video Not Found: ${fallbackVideoUrl}`;
         }
     } else {
         // Fallback to static image for other conditions
@@ -113,6 +107,42 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
             mediaInfo.textContent = `Displaying Image: ${fallbackImageUrl} (File Found)`;
         } else {
             mediaInfo.textContent = `Image Not Found: ${fallbackImageUrl}`;
+        }
+    }
+}
+
+/**
+ * Finds the closest existing video by searching backward in time
+ */
+async function findClosestVideo(weatherCondition, timePeriod, hours, minutes) {
+    let fallbackHours = hours;
+    let fallbackMinutes = minutes;
+
+    while (true) {
+        const videoUrl = `videos/${timePeriod}-${fallbackHours}-${fallbackMinutes}-${weatherCondition}.mp4`;
+
+        // Log the attempted video URL
+        console.log(`Attempting video URL: ${videoUrl}`);
+        document.getElementById("media-info").textContent = `Attempting Video: ${videoUrl}`;
+
+        if (await fileExists(videoUrl)) {
+            return videoUrl;
+        }
+
+        // Decrement the time
+        if (fallbackMinutes === "30") {
+            fallbackMinutes = "00";
+        } else {
+            fallbackMinutes = "30";
+            fallbackHours = (fallbackHours - 1 + 24) % 24; // Wrap around for 24-hour format
+        }
+
+        // Break if we loop back to the original time
+        if (fallbackHours === hours && fallbackMinutes === minutes) {
+            console.warn("No fallback video found, using default.");
+            const defaultVideo = `videos/default.mp4`;
+            document.getElementById("media-info").textContent = `Attempting Video: ${defaultVideo}`;
+            return defaultVideo; // Default video if no fallback found
         }
     }
 }
