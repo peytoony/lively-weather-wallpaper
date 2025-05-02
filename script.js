@@ -8,6 +8,19 @@ let currentVideo = null; // Track the current video to avoid unnecessary changes
  * Fetches weather data from OpenWeather API using latitude and longitude
  */
 async function getWeatherData() {
+    const overrideWeather = document.getElementById("override-weather").value.trim().toLowerCase();
+    const overrideTemperature = document.getElementById("override-temperature").value.trim();
+    const overrideEnabled = document.getElementById("override-weather-checkbox").checked;
+
+    if (overrideEnabled && overrideWeather) {
+        return {
+            weatherId: overrideWeather === "rain" ? 500 : overrideWeather === "snow" ? 600 : overrideWeather === "thunderstorm" ? 200 : 800,
+            weatherMain: overrideWeather,
+            temperatureCelsius: parseFloat(overrideTemperature) || 20, // Default to 20°C if not provided
+            temperatureFahrenheit: ((parseFloat(overrideTemperature) || 20) * 9 / 5 + 32).toFixed(1), // Convert to Fahrenheit
+        };
+    }
+
     const response = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${API_KEY}&units=metric`
     );
@@ -58,10 +71,8 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
     const imageInfo = document.getElementById("image-info");
 
     if (weatherCondition === "rain" || weatherCondition === "thunderstorm") {
-        // Use fallback logic for videos
         const fallbackVideoUrl = await findClosestVideo(weatherCondition, timePeriod, hours, minutes);
 
-        // Display the attempted video URL
         mediaInfo.textContent = `Attempting Video: ${fallbackVideoUrl}`;
         imageInfo.textContent = `Video URL: ${fallbackVideoUrl}`;
 
@@ -69,19 +80,16 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
 
         if (videoExists) {
             video.src = fallbackVideoUrl;
-            video.style.display = "block"; // Show the video
-            background.style.backgroundImage = ""; // Clear static image
+            video.style.display = "block";
+            background.style.backgroundImage = "";
             currentVideo = fallbackVideoUrl;
             mediaInfo.textContent = `Displaying Video: ${fallbackVideoUrl} (File Found)`;
         } else {
             mediaInfo.textContent = `Video Not Found: ${fallbackVideoUrl}`;
         }
     } else {
-        // Fallback to static image for other conditions
-        video.style.display = "none"; // Hide video
         const fallbackImageUrl = await findClosestImage(weatherCondition, timePeriod, hours, minutes);
 
-        // Display the attempted image URL immediately
         imageInfo.textContent = `Attempting Image: ${fallbackImageUrl}`;
         background.style.backgroundImage = `url(${fallbackImageUrl})`;
 
