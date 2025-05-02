@@ -33,7 +33,7 @@ body {
 #info {
     position: absolute;
     top: 10px;
-    left: 10px;
+    right: 10px; /* Move to the top-right corner */
     z-index: 2;
     background: rgba(0, 0, 0, 0.7); /* Darker background for better readability */
     padding: 15px 20px;
@@ -54,37 +54,7 @@ body {
     color: #ccc;
 }
 
-/* Testing Controls */
+/* Testing Controls (Disabled) */
 #testing {
-    position: absolute;
-    top: 200px;
-    left: 10px;
-    z-index: 2;
-    background: rgba(0, 0, 0, 0.7); /* Darker background for better readability */
-    padding: 15px 20px;
-    border-radius: 10px;
-    font-size: 0.9em;
-    color: white;
-    text-align: left;
-    max-width: 300px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Add shadow for depth */
-}
-
-#testing label {
-    display: block;
-    margin-bottom: 10px;
-}
-
-#testing input[type="text"] {
-    width: 100%;
-    padding: 5px;
-    margin-top: 5px;
-    border: none;
-    border-radius: 5px;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-}
-
-#testing input[type="checkbox"] {
-    margin-left: 5px;
+    display: none; /* Hide the override GUI */
 }
