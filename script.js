@@ -49,6 +49,53 @@ function getTimePeriod(hours) {
 }
 
 /**
+ * Finds the closest existing video by searching backward in time
+ */
+async function findClosestVideo(weatherCondition, timePeriod, hours, minutes) {
+    let fallbackHours = hours;
+    let fallbackMinutes = minutes;
+
+    while (true) {
+        // Construct the video URL based on the naming convention
+        const videoUrl = `videos/${weatherCondition}-${timePeriod}-${fallbackHours}-${fallbackMinutes}.mp4`;
+
+        console.log(`Attempting video URL: ${videoUrl}`); // Debugging log
+
+        // Check if the video file exists
+        if (await fileExists(videoUrl)) {
+            return videoUrl;
+        }
+
+        // Decrement the time
+        if (fallbackMinutes === "30") {
+            fallbackMinutes = "00";
+        } else {
+            fallbackMinutes = "30";
+            fallbackHours = (fallbackHours - 1 + 24) % 24; // Wrap around for 24-hour format
+        }
+
+        // Break if we loop back to the original time
+        if (fallbackHours === hours && fallbackMinutes === minutes) {
+            console.warn("No fallback video found, using default.");
+            return `videos/default.mp4`; // Default video if no fallback found
+        }
+    }
+}
+
+/**
+ * Checks if a file exists by making a HEAD request
+ */
+async function fileExists(url) {
+    try {
+        const response = await fetch(url, { method: "HEAD" });
+        return response.ok;
+    } catch (error) {
+        console.error(`Error checking file existence for ${url}:`, error);
+        return false;
+    }
+}
+
+/**
  * Updates the video or photo based on weather conditions
  */
 async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
