@@ -81,7 +81,7 @@ async function updateMedia(weatherCondition, timePeriod, hours, minutes) {
         video.style.display = "none"; // Hide video
         const fallbackImageUrl = await findClosestImage(weatherCondition, timePeriod, hours, minutes);
 
-        // Display the attempted image URL
+        // Display the attempted image URL immediately
         imageInfo.textContent = `Attempting Image: ${fallbackImageUrl}`;
         background.style.backgroundImage = `url(${fallbackImageUrl})`;
 
